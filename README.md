@@ -20,3 +20,7 @@ Project to register keyboard key combinations with relevant actions
 ## Run test
 - Call command:
   - `npm run test`
+
+## Publish to npmjs.com
+- Call command:
+  - `npm publish` 
