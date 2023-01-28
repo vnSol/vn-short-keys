@@ -54,6 +54,37 @@ Project to register keyboard key combinations with relevant actions
       .bind();
   ```
 
+- With:
+  ```js
+    IAction = (event: KeyboardEvent, upstreamReturn: unknown) => unknown;
+    IMode = "v" | "i" | "n"
+  ```
+
+- Example:
+  ```js
+    import { VnShortKey } from "vn-short-keys";
+    VnShortKey.init();
+    const function1 = (event, upstreamResult) => {
+      console.log("function 1");
+      return "func1 output";
+    };
+    const function2 = (event, upstreamResult) => {
+      console.log("function 2");
+      console.log(upstreamResult);
+      return "func2 output";
+    };
+    VnShortKey.mode("n")
+      .when("c n")
+      .do(function1)
+      .then(function2)
+      .bind();
+    VnShortKey.mode("n")
+      .when("Ctrl+n")
+      .do(function1)
+      .then(function2)
+      .bind();
+  ```
+
 ## References
 - https://n1ghtmare.github.io/2022-01-14/implement-a-keyboard-shortcuts-handler-in-typescript/
 - https://github.com/jaywcjlove/hotkeys
