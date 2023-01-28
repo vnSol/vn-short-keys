@@ -12,6 +12,8 @@ Project to register keyboard key combinations with relevant actions
   - Bind with single action
   - Allow to chain multiple actions
 - Automatically call the relevant actions (by scope and by mode) when a key combination is hitted
+  - Each scope has 3 modes
+  - Each mode has multiple registering key-actions
 
 ## How to use:
 - Init for default key binding on top of project:
@@ -53,13 +55,11 @@ Project to register keyboard key combinations with relevant actions
       ...
       .bind();
   ```
-
 - With:
   ```js
     IAction = (event: KeyboardEvent, upstreamReturn: unknown) => unknown;
     IMode = "v" | "i" | "n"
   ```
-
 - Example:
   ```js
     import { VnShortKey } from "vn-short-keys";
@@ -84,7 +84,17 @@ Project to register keyboard key combinations with relevant actions
       .then(function2)
       .bind();
   ```
+- To view registered actions:
+  ```js
+    // Dump all scopes, all modes
+    VnShortKey.dump();
 
+    // Dump specific scope, all modes
+    VnShortKey.dump(<scopeName: string>);
+
+    // Dump specific scope at specific mode
+    VnShortKey.dump(<scopeName: string>, <mode: IMode>);
+  ```
 ## References
 - https://n1ghtmare.github.io/2022-01-14/implement-a-keyboard-shortcuts-handler-in-typescript/
 - https://github.com/jaywcjlove/hotkeys
