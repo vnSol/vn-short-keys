@@ -1,5 +1,5 @@
 import { VnShortKey } from "../src";
-import { DEFAULT_SCOPE } from "../src/constants";
+import { DEFAULT_DEBOUNCE_TIME, DEFAULT_SCOPE } from "../src/constants";
 import { KeyManager } from "../src/key_manager";
 import { IMode } from "../src/types";
 
@@ -9,9 +9,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const dispatchKey = async (key: string) => {
   const keyDownEvent = new KeyboardEvent("keydown", { "key": key });
   document.dispatchEvent(keyDownEvent);
-  await sleep(200);
-  const keyUpEvent = new KeyboardEvent("keyup", { "key": key });
-  document.dispatchEvent(keyUpEvent);
   await sleep(200);
 };
 
@@ -213,12 +210,12 @@ test("should bind multiple actions success", () => {
   dispatchKey(key);
 });
 
-test("should success when fire combined keys", () => {
+test("should success when fire combined keys", async () => {
 
   const mode = "n";
-  const key = "ctrl+v";
-  const func = (keyboardEvent) => {
-    expect(keyboardEvent.key).toBe(key);
+  const key = "ctrl+shift+v";
+  const func = () => {
+    console.log("This should be called!");
   };
 
   VnShortKey
@@ -227,24 +224,26 @@ test("should success when fire combined keys", () => {
     .do(func)
     .bind();
 
+  const spy = jest.spyOn(console, "log");
   document.dispatchEvent(
     new KeyboardEvent("keydown", {
       key: "v",
       ctrlKey: true,
+      shiftKey: true,
       bubbles: true
     })
   );
-  document.dispatchEvent(new KeyboardEvent("keyup", { key: "v", bubbles: true }));
+  await sleep(DEFAULT_DEBOUNCE_TIME + 500);
+  expect(spy).toHaveBeenCalledTimes(1);
 });
 
 test("should success when fire sequence keys", async () => {
 
   const mode = "n";
-  const randomKeys = [...Array(2).keys()].map(() => genRandomChar());
+  const randomKeys = [...Array(4).keys()].map(() => genRandomChar());
   const sequenceKeys = randomKeys.join(" ");
-  const func = (keyboardEvent) => {
+  const func = () => {
     console.log("This should be called!");
-    expect(keyboardEvent.key).toBe(randomKeys[randomKeys.length - 1]);
   };
 
   VnShortKey
@@ -258,6 +257,7 @@ test("should success when fire sequence keys", async () => {
     await dispatchKey(key);
   }
 
+  await sleep(DEFAULT_DEBOUNCE_TIME + 500);
   expect(spy).toHaveBeenCalledTimes(1);
 });
 
