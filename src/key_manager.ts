@@ -12,9 +12,10 @@ export class KeyManager {
   static normalize = (key: string): string => {
 
     key = key.trim();
+    key = key.toLowerCase();
+
     if (key.length === 1) return key;
 
-    key = key.toLowerCase();
     switch (key) {
       case "esc":
         return "escape";
@@ -22,9 +23,28 @@ export class KeyManager {
         return "control";
       case "option":
         return "alt";
+      case "os":
+        return "meta";
       default:
         return key;
     }
+  };
+
+  static isActionKey = (key: string): boolean => {
+
+    return ["meta", "control", "alt", "shift"].includes(this.normalize(key));
+  };
+
+  static toString = (keyboardEvent: KeyboardEvent): string => {
+
+    const key = [];
+    if (keyboardEvent.metaKey) key.push(this.normalize("meta"));
+    if (keyboardEvent.ctrlKey) key.push(this.normalize("ctrl"));
+    if (keyboardEvent.shiftKey) key.push(this.normalize("shift"));
+    if (keyboardEvent.altKey) key.push(this.normalize("option"));
+    key.push(this.normalize(keyboardEvent.key));
+
+    return key.sort().join("+");
   };
 
   static getKeyListener = (debounceTime: number): KeyListener => {

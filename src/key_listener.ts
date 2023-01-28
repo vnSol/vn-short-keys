@@ -11,21 +11,18 @@ export class KeyListener {
   _combinationBuffer: string[];
   static _alreadyBound: boolean;
   _keyDownListener: (keyboardEvent: KeyboardEvent) => void;
-  _keyUpListener: (keyboardEvent: KeyboardEvent) => void;
 
   constructor(debounceTime = DEFAULT_DEBOUNCE_TIME) {
 
     this._debounceTime = debounceTime;
     this._combinationBuffer = [];
     this._keyDownListener = this.getKeyDownListener();
-    this._keyUpListener = this.getKeyUpListener();
   }
 
   bind = () => {
 
     if (!KeyListener._alreadyBound) {
       document.addEventListener("keydown", this._keyDownListener);
-      document.addEventListener("keyup", this._keyUpListener);
       KeyListener._alreadyBound = true;
     }
   };
@@ -34,7 +31,6 @@ export class KeyListener {
 
     if (KeyListener._alreadyBound) {
       document.removeEventListener("keydown", this._keyDownListener);
-      document.removeEventListener("keyup", this._keyUpListener);
       KeyListener._alreadyBound = false;
     }
   };
@@ -48,23 +44,18 @@ export class KeyListener {
       const scope = ScopeManager.get(VnShortKey.getScope());
       if (!scope) return;
 
-      this.resetSearchingAfterDebounce();
-      const pressedKey = keyboardEvent.key;
-      if (this.shouldIgnore(pressedKey)) return;
+      TimeHelper.debounce(
+        () => {
+          // end of debouncing
+          this.triggerActionsIfMatched(scope, keyboardEvent);
+          this.resetToRoot(scope);
+        }, this._debounceTime
+      )();
 
-      this._combinationBuffer.push(KeyManager.normalize(pressedKey));
-      const treeNode = this.lookForTreeNode(scope);
-      this._combinationBuffer.pop();
-      if (!treeNode) return;
+      const pressedKey = KeyManager.toString(keyboardEvent);
+      if (this.shouldIgnore(keyboardEvent)) return;
 
-      if (treeNode.actions?.length > 0) {
-        this.triggerActions(treeNode.actions, keyboardEvent);
-        this.resetToRoot(scope);
-        return;
-      }
-
-      // To go deeper into tree
-      this.getModeTree(scope).currentNode = treeNode;
+      this._combinationBuffer.push(pressedKey);
     };
   };
 
@@ -73,35 +64,34 @@ export class KeyListener {
     return e.repeat;
   };
 
-  private shouldIgnore = (pressedKey: string): boolean => {
+  private shouldIgnore = (keyboardEvent: KeyboardEvent): boolean => {
 
-    return pressedKey === "Shift" ||
-      pressedKey === "OS" ||
-      this.isExistedInCombination(pressedKey);
+    return KeyManager.isActionKey(keyboardEvent.key);
   };
 
-  private isExistedInCombination = (pressedKey: string): boolean => {
+  private triggerActionsIfMatched = (scope: ShortKeyScope, keyboardEvent: KeyboardEvent) => {
+    const treeNode = this.lookForTreeNode(scope);
+    if (!treeNode) return;
 
-    return this._combinationBuffer.find(key => key === KeyManager.normalize(pressedKey)) !== undefined;
-  };
-
-  private resetSearchingAfterDebounce = (): void => {
-
-    TimeHelper.debounce(
-      () => {
-        const scope = ScopeManager.get(VnShortKey.getScope());
-        const mode = scope && scope.modeMap.get(VnShortKey.getMode());
-        if (mode) {
-          mode.currentNode = mode.root;
-        }
-      }, this._debounceTime
-    )();
+    if (treeNode.actions?.length > 0) {
+      this.triggerActions(treeNode.actions, keyboardEvent);
+      this.resetToRoot(scope);
+      return;
+    }
   };
 
   private lookForTreeNode = (scope: ShortKeyScope): ShortKeyNode | undefined => {
 
-    const keys = this._combinationBuffer.sort().join("+");
-    return ActionTree.getNodeByKeys(scope, VnShortKey.getMode(), keys);
+    let treeNode = undefined;
+    for (const key of this._combinationBuffer) {
+      treeNode = ActionTree.getNodeByKeys(scope, VnShortKey.getMode(), key);
+      if (!treeNode) break;
+
+      // To go deeper into tree
+      this.getModeTree(scope).currentNode = treeNode;
+    }
+    this._combinationBuffer = [];
+    return treeNode;
   };
 
   private triggerActions = (actions: IAction[], keyboardEvent: KeyboardEvent): void => {
@@ -117,23 +107,6 @@ export class KeyListener {
 
     const modeTree = this.getModeTree(scope);
     modeTree.currentNode = modeTree.root;
-  };
-
-  getKeyUpListener = () => {
-
-    return (keyboardEvent: KeyboardEvent) => {
-
-      this.removeKeyFromCombination(keyboardEvent.key);
-      const scope = ScopeManager.get(VnShortKey.getScope());
-      if (this._combinationBuffer.length === 0 && scope && this.getModeTree(scope).currentNode === null) {
-        this.resetToRoot(scope);
-      }
-    };
-  };
-
-  private removeKeyFromCombination = (keyReleased: string) => {
-
-    this._combinationBuffer = this._combinationBuffer.filter(key => key !== KeyManager.normalize(keyReleased));
   };
 
   private getModeTree = (scope: ShortKeyScope): ShortKeyMode => {
