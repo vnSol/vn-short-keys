@@ -38,7 +38,6 @@ export class KeyListener {
   getKeyDownListener = () => {
 
     return (keyboardEvent: KeyboardEvent) => {
-      keyboardEvent.preventDefault();
 
       if (this.isKeyHolding(keyboardEvent)) return;
 
@@ -98,6 +97,7 @@ export class KeyListener {
 
     let upstreamReturn: unknown = null;
     for (const element of actions) {
+      keyboardEvent.preventDefault();
       upstreamReturn = element(keyboardEvent, upstreamReturn);
     }
   };
