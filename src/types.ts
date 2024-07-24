@@ -1,6 +1,6 @@
 import { KeyListener } from "./key_listener";
 
-export type IAction = (event: KeyboardEvent, upstreamReturn: unknown) => unknown;
+export type IAction<T = unknown> = (event: KeyboardEvent, upstreamReturn: T) => unknown;
 export type IMode = "v" | "i" | "n"
 
 export interface IChain {
