@@ -9,7 +9,7 @@ import { DEFAULT_DEBOUNCE_TIME } from "./constants";
 export class KeyListener {
   _debounceTime: number;
   _combinationBuffer: string[];
-  static _alreadyBound: boolean;
+  private static _alreadyBound: boolean;
   _keyDownListener: (keyboardEvent: KeyboardEvent) => void;
 
   constructor(debounceTime = DEFAULT_DEBOUNCE_TIME) {
@@ -38,6 +38,7 @@ export class KeyListener {
   getKeyDownListener = () => {
 
     return (keyboardEvent: KeyboardEvent) => {
+      keyboardEvent.preventDefault();
 
       if (this.isKeyHolding(keyboardEvent)) return;
 
@@ -76,7 +77,6 @@ export class KeyListener {
     if (treeNode.actions?.length > 0) {
       this.triggerActions(treeNode.actions, keyboardEvent);
       this.resetToRoot(scope);
-      return;
     }
   };
 
@@ -97,9 +97,8 @@ export class KeyListener {
   private triggerActions = (actions: IAction[], keyboardEvent: KeyboardEvent): void => {
 
     let upstreamReturn: unknown = null;
-    for (let i = 0; i < actions.length; i++) {
-      keyboardEvent.preventDefault();
-      upstreamReturn = actions[i](keyboardEvent, upstreamReturn);
+    for (const element of actions) {
+      upstreamReturn = element(keyboardEvent, upstreamReturn);
     }
   };
 
