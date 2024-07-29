@@ -16,8 +16,8 @@ export class VnKeyAction implements IChain {
 
   then(action: IAction): IChain {
 
-    if (!action.name)
-      throw new Error("Function name is required!");
+    if (typeof action !== 'function')
+      throw new Error("Action should be a function!");
 
     this._actions.push(action);
     return this;
